@@ -302,80 +302,86 @@ export default function TacTestPage({ params }) {
 
   return (
     <div className="tac-container">
-      {/* Topo da Folha de Papel: ESTÍMULO ALVO ISOLADO CENTRALIZADO (Destacado e Ampliado) */}
+      {/* Topo da Folha de Papel: ESTÍMULO ALVO E CONTROLES SUPERIORES */}
       <header className="tac-paper-top-zone">
+        {/* Esquerda: Botão Tela Cheia */}
+        <div className="tac-top-action-left">
+          <button
+            onClick={toggleFullscreen}
+            className="tac-top-btn"
+            title="Alternar Modo Tela Cheia"
+          >
+            <Maximize2 size={13} />
+            <span className="tac-btn-text">Tela Cheia</span>
+          </button>
+        </div>
+
+        {/* Centro: Estímulo Alvo */}
         <div className="tac-paper-target-wrapper">
           {currentPart === 3 ? (
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              gap: '10px',
               background: '#f8fafc',
               border: isTreino ? '2px solid #86efac' : '2px solid #cbd5e1',
-              borderRadius: '14px',
-              padding: isTreino ? '6px 20px' : '5px 18px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              borderRadius: '10px',
+              padding: isTreino ? '4px 14px' : '3px 12px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <span style={{
-                  fontSize: isTreino ? '0.85rem' : '0.78rem',
-                  fontWeight: 800,
-                  color: isTreino ? '#15803d' : '#334155',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em'
-                }}>
-                  {isTreino ? '🎯 Treino Parte 3: Atenção Alternada' : '🎯 Parte 3: Atenção Alternada'}
-                </span>
-                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  O alvo muda a cada linha: veja a figura modelo indicada no início de cada linha (à esquerda)
-                </span>
-              </div>
+              <span style={{
+                fontSize: isTreino ? '0.78rem' : '0.72rem',
+                fontWeight: 800,
+                color: isTreino ? '#15803d' : '#334155',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
+              }}>
+                {isTreino ? '🎯 Treino Parte 3: Atenção Alternada' : '🎯 Parte 3: Atenção Alternada'}
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                (Alvo indicado no início de cada linha à esquerda)
+              </span>
             </div>
           ) : currentPart === 2 ? (
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '14px',
+              gap: '10px',
               background: '#f8fafc',
               border: isTreino ? '2px solid #86efac' : '2px solid #cbd5e1',
-              borderRadius: '14px',
-              padding: isTreino ? '6px 20px' : '4px 18px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              borderRadius: '10px',
+              padding: isTreino ? '4px 12px' : '3px 10px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{
-                  fontSize: isTreino ? '0.85rem' : '0.78rem',
-                  fontWeight: 800,
-                  color: isTreino ? '#15803d' : '#334155',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em'
-                }}>
-                  {isTreino ? '🎯 Par Alvo do Treino:' : '🎯 Par Alvo (Sequência):'}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                  Procure este par de figuras juntas (nesta mesma ordem)
-                </span>
-              </div>
+              <span style={{
+                fontSize: isTreino ? '0.78rem' : '0.72rem',
+                fontWeight: 800,
+                color: isTreino ? '#15803d' : '#334155',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
+              }}>
+                {isTreino ? '🎯 Par Alvo:' : '🎯 Par Alvo (Sequência):'}
+              </span>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0px',
                 background: '#ffffff',
-                border: '2px solid #94a3b8',
-                borderRadius: '12px',
-                padding: '4px 10px',
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
+                border: '1.5px solid #94a3b8',
+                borderRadius: '8px',
+                padding: '2px 6px',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)'
               }}>
                 <img
                   src="/api/estimulos/parte3/pocoyo.png"
                   alt="Alvo 1"
                   className="tac-paper-target-img"
                   style={{
-                    height: isTreino ? '68px' : '56px',
-                    maxHeight: isTreino ? '68px' : '56px',
-                    maxWidth: '56px',
+                    height: isTreino ? '48px' : '40px',
+                    maxHeight: isTreino ? '48px' : '40px',
+                    maxWidth: '42px',
                     objectFit: 'contain',
-                    marginRight: '-3px'
+                    marginRight: '-2px'
                   }}
                 />
                 <img
@@ -383,11 +389,11 @@ export default function TacTestPage({ params }) {
                   alt="Alvo 2"
                   className="tac-paper-target-img"
                   style={{
-                    height: isTreino ? '68px' : '56px',
-                    maxHeight: isTreino ? '68px' : '56px',
-                    maxWidth: '56px',
+                    height: isTreino ? '48px' : '40px',
+                    maxHeight: isTreino ? '48px' : '40px',
+                    maxWidth: '42px',
                     objectFit: 'contain',
-                    marginLeft: '-3px'
+                    marginLeft: '-2px'
                   }}
                 />
               </div>
@@ -396,44 +402,147 @@ export default function TacTestPage({ params }) {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '14px',
+              gap: '10px',
               background: '#f8fafc',
               border: isTreino ? '2px solid #86efac' : '2px solid #cbd5e1',
-              borderRadius: '14px',
-              padding: isTreino ? '6px 20px' : '4px 18px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              borderRadius: '10px',
+              padding: isTreino ? '4px 14px' : '3px 12px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{
-                  fontSize: isTreino ? '0.85rem' : '0.78rem',
-                  fontWeight: 800,
-                  color: isTreino ? '#15803d' : '#334155',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em'
-                }}>
-                  {isTreino ? '🎯 Alvo do Treino:' : '🎯 Estímulo Alvo:'}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                  Marque todas as figuras iguais a esta
-                </span>
-              </div>
+              <span style={{
+                fontSize: isTreino ? '0.78rem' : '0.72rem',
+                fontWeight: 800,
+                color: isTreino ? '#15803d' : '#334155',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
+              }}>
+                {isTreino ? '🎯 Alvo do Treino:' : '🎯 Estímulo Alvo:'}
+              </span>
               <img
                 src={getTargetHeroUrl()}
                 alt="Estímulo Alvo"
                 className="tac-paper-target-img"
                 style={{
-                  height: isTreino ? '80px' : '70px',
-                  maxHeight: isTreino ? '80px' : '70px',
-                  maxWidth: isTreino ? '130px' : '110px'
+                  height: isTreino ? '50px' : '42px',
+                  maxHeight: isTreino ? '50px' : '42px',
+                  maxWidth: isTreino ? '80px' : '65px'
                 }}
               />
             </div>
           )}
         </div>
+
+        {/* Direita: Botão Painel do Avaliador */}
+        <div className="tac-top-action-right">
+          <button
+            onClick={() => setIsDockHidden(!isDockHidden)}
+            className={`tac-top-btn ${!isDockHidden ? 'is-active' : ''}`}
+            title="Abrir ou fechar painel do examinador"
+          >
+            <span>{isDockHidden ? '▲ Painel do Avaliador' : '▼ Fechar Painel'}</span>
+          </button>
+        </div>
       </header>
 
-      {/* Área da Folha de Papel Pura com os 300 Estímulos Soltos sobre o Fundo Branco (100% de tela) */}
-      <main className={`tac-board-wrapper ${!isDockHidden ? 'has-dock-open' : ''}`}>
+      {/* Painel do Avaliador no Topo (Retrátil, sem obstruir a folha de papel) */}
+      {!isDockHidden && (
+        <section className="tac-examiner-top-dock">
+          {/* Esquerda: Identificação do Paciente e Fase */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: '#334155' }}>
+              <User size={14} color="#2563eb" />
+              <span>{patient?.full_name?.split(' ')[0] || 'Paciente'}</span>
+            </div>
+            <span style={{ color: '#cbd5e1' }}>|</span>
+            <span style={{ fontWeight: 600, color: isTreino ? '#16a34a' : '#2563eb', fontSize: '0.78rem' }}>
+              {config.title.split(':')[0]} • {isTreino ? 'TREINO' : 'OFICIAL'}
+            </span>
+            <span style={{ color: '#cbd5e1' }}>|</span>
+            <span style={{ color: '#64748b', fontSize: '0.78rem' }}>
+              Marcados: <strong>{markedIds.length}</strong>
+            </span>
+          </div>
+
+          {/* Centro: Cronômetro Discreto para o Avaliador */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {!isTreino && (
+              <TimerBar
+                timeLeft={timeLeft}
+                totalTime={60}
+                isRunning={isTimerRunning}
+              />
+            )}
+          </div>
+
+          {/* Direita: Ações de Aplicação, Ocultação e Sair */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isTreino ? (
+              <>
+                <button
+                  onClick={() => setMarkedIds([])}
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+                  title="Limpar marcações do treino"
+                >
+                  <RotateCcw size={12} /> Limpar
+                </button>
+                <button
+                  onClick={handleStartOfficialTest}
+                  className="btn btn-primary btn-sm"
+                  style={{ background: '#16a34a', borderColor: '#16a34a', padding: '4px 12px', fontWeight: 600, fontSize: '0.78rem' }}
+                >
+                  <Play size={13} /> Iniciar Teste Oficial (1 Minuto)
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+                >
+                  {isTimerRunning ? <><Pause size={12} /> Pausar</> : <><Play size={12} /> Retomar</>}
+                </button>
+                <button
+                  onClick={handleTimeExpired}
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '3px 10px', fontSize: '0.75rem' }}
+                >
+                  <CheckCircle size={12} /> Concluir Etapa
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => setIsDockHidden(true)}
+              className="btn btn-secondary btn-sm"
+              style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+              title="Ocultar Painel"
+            >
+              Ocultar
+            </button>
+
+            <button
+              onClick={() => {
+                if (confirm('Deseja interromper e voltar ao painel? Os dados não salvos serão descartados.')) {
+                  if (typeof document !== 'undefined' && document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => {});
+                  }
+                  router.push('/dashboard');
+                }
+              }}
+              className="btn btn-secondary btn-sm"
+              style={{ padding: '3px 8px', fontSize: '0.75rem', color: '#dc2626' }}
+              title="Sair do teste"
+            >
+              Sair
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Área da Folha de Papel Pura com os Estímulos Soltos (100% livre na base) */}
+      <main className="tac-board-wrapper">
         <TacCanvasGrid
           grid={grid}
           markedIds={markedIds}
@@ -442,129 +551,6 @@ export default function TacTestPage({ params }) {
           disabled={!isTreino && !isTimerRunning && timeLeft === 0}
         />
       </main>
-
-      {/* Barra de Controle do Examinador no Rodapé (Discreta e Retrátil) */}
-      <footer className={`tac-examiner-dock ${isDockHidden ? 'is-hidden' : ''}`}>
-        {/* Esquerda: Identificação do Paciente e Fase */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.85rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#334155' }}>
-            <User size={15} color="#2563eb" />
-            <span>{patient?.full_name?.split(' ')[0] || 'Paciente'}</span>
-          </div>
-          <span style={{ color: '#cbd5e1' }}>|</span>
-          <span style={{ fontWeight: 600, color: isTreino ? '#16a34a' : '#2563eb', fontSize: '0.8rem' }}>
-            {config.title.split(':')[0]} • {isTreino ? 'TREINO' : 'OFICIAL'}
-          </span>
-          <span style={{ color: '#cbd5e1' }}>|</span>
-          <span style={{ color: '#64748b', fontSize: '0.8rem' }}>
-            Marcados: <strong>{markedIds.length}</strong>
-          </span>
-        </div>
-
-        {/* Centro: Cronômetro Discreto para o Avaliador */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {!isTreino && (
-            <TimerBar
-              timeLeft={timeLeft}
-              totalTime={60}
-              isRunning={isTimerRunning}
-            />
-          )}
-        </div>
-
-        {/* Direita: Ações de Aplicação, Ocultação e Tela Cheia */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isTreino ? (
-            <>
-              <button
-                onClick={() => setMarkedIds([])}
-                className="btn btn-secondary btn-sm"
-                style={{ padding: '3px 8px', fontSize: '0.78rem' }}
-                title="Limpar marcações do treino"
-              >
-                <RotateCcw size={13} /> Limpar
-              </button>
-              <button
-                onClick={handleStartOfficialTest}
-                className="btn btn-primary btn-sm"
-                style={{ background: '#16a34a', borderColor: '#16a34a', padding: '4px 14px', fontWeight: 600, fontSize: '0.8rem' }}
-              >
-                <Play size={14} /> Iniciar Teste Oficial (1 Minuto)
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="btn btn-secondary btn-sm"
-                style={{ padding: '3px 10px', fontSize: '0.78rem' }}
-              >
-                {isTimerRunning ? <><Pause size={13} /> Pausar</> : <><Play size={13} /> Retomar</>}
-              </button>
-              <button
-                onClick={handleTimeExpired}
-                className="btn btn-primary btn-sm"
-                style={{ padding: '3px 12px', fontSize: '0.78rem' }}
-              >
-                <CheckCircle size={13} /> Concluir Etapa
-              </button>
-            </>
-          )}
-
-          <button
-            onClick={toggleFullscreen}
-            className="btn btn-secondary btn-sm"
-            title="Alternar Tela Cheia"
-            style={{ padding: '4px 8px' }}
-          >
-            <Maximize2 size={14} />
-          </button>
-
-          <button
-            onClick={() => setIsDockHidden(true)}
-            className="btn btn-secondary btn-sm"
-            title="Ocultar Painel (Modo Folha Total)"
-            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-          >
-            Ocultar Painel
-          </button>
-
-          <button
-            onClick={() => {
-              if (confirm('Deseja interromper e voltar ao painel? Os dados não salvos serão descartados.')) {
-                if (typeof document !== 'undefined' && document.fullscreenElement) {
-                  document.exitFullscreen().catch(() => {});
-                }
-                router.push('/dashboard');
-              }
-            }}
-            className="btn btn-secondary btn-sm"
-            style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#dc2626' }}
-            title="Sair do teste"
-          >
-            Sair
-          </button>
-        </div>
-      </footer>
-
-      {/* Botões Flutuantes Discretos no Rodapé para o Avaliador no Tablet */}
-      <button
-        onClick={toggleFullscreen}
-        className="tac-fullscreen-btn"
-        title="Alternar Modo Tela Cheia no Tablet"
-      >
-        <Maximize2 size={13} /> Tela Cheia
-      </button>
-
-      {isDockHidden && (
-        <button
-          onClick={() => setIsDockHidden(false)}
-          className="tac-dock-toggle-btn"
-          title="Exibir Controles do Avaliador"
-        >
-          ▲ Painel do Avaliador
-        </button>
-      )}
 
       {/* Modal de Parabéns Simplificado */}
       {transitionModal && (
