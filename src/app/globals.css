@@ -61,6 +61,7 @@
 
 html, body {
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--bg-main);
   color: var(--text-main);
   font-family: var(--font-body);
@@ -275,13 +276,17 @@ button, input, select, textarea {
 .tac-container {
   position: relative;
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   width: 100vw;
+  width: 100dvw;
   background: #ffffff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   user-select: none;
+  box-sizing: border-box;
 }
 
 /* Zona do Estímulo Alvo Centralizado no Topo (Destacado e visível para o paciente) */
@@ -316,6 +321,7 @@ button, input, select, textarea {
   flex: 1;
   min-height: 0;
   width: 100vw;
+  width: 100dvw;
   padding: 0;
   margin: 0;
   box-sizing: border-box;
@@ -326,6 +332,11 @@ button, input, select, textarea {
   background: #ffffff;
   touch-action: none;
   -webkit-touch-callout: none;
+  transition: padding-bottom 0.2s ease;
+}
+
+.tac-board-wrapper.has-dock-open {
+  padding-bottom: 56px;
 }
 
 .tac-grid-sheet {
@@ -522,59 +533,83 @@ button, input, select, textarea {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 
-/* Barra do Examinador no Rodapé (Discreta e Retrátil) */
+/* Barra do Examinador no Rodapé (Fixa, Segura para iPad e Totalmente Visível) */
 .tac-examiner-dock {
-  height: 44px;
-  min-height: 44px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-  padding: 0 18px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  min-height: 52px;
+  background: rgba(248, 250, 252, 0.98);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1.5px solid #cbd5e1;
+  padding: 8px 18px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 20;
-  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  gap: 10px;
+  z-index: 100;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.12);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-in-out;
 }
 
 .tac-examiner-dock.is-hidden {
-  transform: translateY(100%);
+  transform: translateY(120%);
   opacity: 0;
   pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .tac-examiner-dock {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 10px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 6px));
+  }
 }
 
 /* Botões Flutuantes Discretos para Tablet (Avaliador e Tela Cheia) */
 .tac-dock-toggle-btn,
 .tac-fullscreen-btn {
   position: fixed;
-  bottom: 6px;
-  background: rgba(241, 245, 249, 0.9);
-  border: 1px solid #cbd5e1;
-  border-radius: 20px;
-  padding: 4px 10px;
-  font-size: 0.72rem;
-  color: #64748b;
+  bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #94a3b8;
+  border-radius: 24px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e293b;
   cursor: pointer;
-  z-index: 30;
-  backdrop-filter: blur(4px);
+  z-index: 90;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
   transition: all 0.15s;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .tac-dock-toggle-btn {
-  right: 12px;
+  right: max(14px, env(safe-area-inset-right, 14px));
 }
 
 .tac-fullscreen-btn {
-  left: 12px;
+  left: max(14px, env(safe-area-inset-left, 14px));
 }
 
 .tac-dock-toggle-btn:hover,
 .tac-fullscreen-btn:hover {
-  background: #ffffff;
-  color: #1e293b;
-  border-color: #94a3b8;
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 
 /* Modal */

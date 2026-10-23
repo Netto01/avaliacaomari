@@ -433,7 +433,7 @@ export default function TacTestPage({ params }) {
       </header>
 
       {/* Área da Folha de Papel Pura com os 300 Estímulos Soltos sobre o Fundo Branco (100% de tela) */}
-      <main className="tac-board-wrapper">
+      <main className={`tac-board-wrapper ${!isDockHidden ? 'has-dock-open' : ''}`}>
         <TacCanvasGrid
           grid={grid}
           markedIds={markedIds}
