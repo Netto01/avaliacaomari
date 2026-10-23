@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AVN - Plataforma de Avaliação Neuropsicológica Online
 
-## Getting Started
+Sistema online para aplicação, correção e laudos de testes neuropsicológicos, com foco no **Teste de Atenção por Cancelamento (TAC)** e integração com banco de dados **Supabase**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Como Executar
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+2. Execute o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Abra no navegador: [http://localhost:3000](http://localhost:3000)
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📋 Funcionalidades
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Painel do Avaliador**: Cadastro de pacientes, gestão de prontuários, cálculo automático de idade e histórico de testes.
+- **Teste de Atenção por Cancelamento (TAC)**:
+  - Parte 1: Atenção Seletiva (1 Alvo) • Treino prévio + Teste cronometrado de 1 minuto.
+  - Parte 2: Atenção Dividida (2 Alvos Juntos) • Treino prévio + Teste cronometrado de 1 minuto.
+  - Parte 3: Atenção Alternada (1 Alvo por Linha) • Treino prévio + Teste cronometrado de 1 minuto.
+- **Correção Automática**: Cálculo instantâneo de Acertos ($A$), Erros ($E$), Omissões ($O$) e Escore Líquido ($A - E$).
+- **Laudo Diagnóstico**: Tabelas normativas com percentis por faixa etária e layout preparado para impressão/PDF.
+- **Banco de Dados Supabase**: Script SQL com Row Level Security (RLS) em `supabase/schema.sql`.

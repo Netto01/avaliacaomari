@@ -1,0 +1,1 @@
+# Coloque aqui a imagem do alvo (ex: alvo.png) e dos distratores (distrator1.png, distrator2.png...)

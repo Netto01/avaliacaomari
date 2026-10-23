@@ -1,0 +1,1 @@
+# Coloque aqui os 2 alvos associados (ex: alvo1.png, alvo2.png ou alvo_par.png) e distratores
