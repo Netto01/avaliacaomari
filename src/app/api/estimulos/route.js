@@ -15,9 +15,15 @@ export async function GET() {
 
   const imageExtensions = ['.webp', '.png', '.jpg', '.jpeg'];
 
-  // 1. Arquivos nas subpastas estimulos/
+  // 1. Arquivos nas subpastas do TAC (estimulos/tac/parteX ou estimulos/parteX)
   ['parte1', 'parte2', 'parte3'].forEach(part => {
-    const dirPath = path.join(rootEstimulos, part);
+    let dirPath = path.join(rootEstimulos, 'tac', part);
+    let urlPrefix = `/api/estimulos/tac/${part}`;
+    if (!fs.existsSync(dirPath)) {
+      dirPath = path.join(rootEstimulos, part);
+      urlPrefix = `/api/estimulos/${part}`;
+    }
+
     if (fs.existsSync(dirPath)) {
       const files = fs.readdirSync(dirPath).filter(file => {
         const ext = path.extname(file).toLowerCase();
@@ -28,7 +34,7 @@ export async function GET() {
         const mtime = fs.statSync(filePath).mtimeMs;
         return {
           filename: f,
-          url: `/api/estimulos/${part}/${f}?v=${Math.round(mtime)}`
+          url: `${urlPrefix}/${f}?v=${Math.round(mtime)}`
         };
       });
     }

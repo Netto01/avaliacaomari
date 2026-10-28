@@ -16,15 +16,21 @@ export async function GET(request, { params }) {
 
   // Caminho absoluto para a pasta estimulos na raiz
   const rootEstimulos = path.join(process.cwd(), 'estimulos');
-  const filePath = path.join(rootEstimulos, relativePath);
+  let filePath = path.join(rootEstimulos, relativePath);
 
   // Proteção contra path traversal
   if (!filePath.startsWith(rootEstimulos)) {
     return new Response('Acesso negado', { status: 403 });
   }
 
+  // Fallback de retrocompatibilidade para o TAC caso a rota antiga seja requisitada
   if (!fs.existsSync(filePath)) {
-    return new Response('Arquivo não encontrado', { status: 404 });
+    const tacFallback = path.join(rootEstimulos, 'tac', relativePath);
+    if (fs.existsSync(tacFallback)) {
+      filePath = tacFallback;
+    } else {
+      return new Response('Arquivo não encontrado', { status: 404 });
+    }
   }
 
   const stat = fs.statSync(filePath);

@@ -91,7 +91,19 @@ CREATE TABLE IF NOT EXISTS public.tac_results (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 6. Tabela Normativa do TAC (Para referência psicométrica)
+-- 6. Tabela de Resultados do TNVRI (Raciocínio Não-Verbal)
+CREATE TABLE IF NOT EXISTS public.tnvri_results (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id UUID NOT NULL REFERENCES public.test_sessions(id) ON DELETE CASCADE,
+    total_items INT DEFAULT 60,
+    total_hits INT DEFAULT 0,
+    total_errors INT DEFAULT 0,
+    total_time_seconds INT DEFAULT 0,
+    items_detail JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 7. Tabela Normativa do TAC (Para referência psicométrica)
 CREATE TABLE IF NOT EXISTS public.normative_tables (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     test_type TEXT NOT NULL DEFAULT 'TAC',
@@ -118,6 +130,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.test_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tac_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tnvri_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.normative_tables ENABLE ROW LEVEL SECURITY;
 
 -- Regras para Profiles
@@ -142,6 +155,16 @@ CREATE POLICY "Avaliadores acessam resultados das suas sessões"
         EXISTS (
             SELECT 1 FROM public.test_sessions s
             WHERE s.id = tac_results.session_id AND s.evaluator_id = auth.uid()
+        )
+    );
+
+-- Regras para TNVRI Results
+CREATE POLICY "Avaliadores acessam resultados tnvri das suas sessões"
+    ON public.tnvri_results FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.test_sessions s
+            WHERE s.id = tnvri_results.session_id AND s.evaluator_id = auth.uid()
         )
     );
 

@@ -3,9 +3,9 @@ import path from 'path';
 import { processImage } from './clean-all-stimuli.mjs';
 
 const targetDirs = [
-  'estimulos/parte1',
-  'estimulos/parte2',
-  'estimulos/parte3',
+  'estimulos/tac/parte1',
+  'estimulos/tac/parte2',
+  'estimulos/tac/parte3',
   'public/default-stimuli'
 ];
 

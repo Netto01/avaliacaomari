@@ -1,0 +1,15 @@
+TNVRI - Teste Não-Verbal de Raciocínio Infantil
+
+Coloque aqui uma pasta por página do teste, nomeadas:
+  pagina_1, pagina_2, pagina_3, ...
+
+pagina_1 e pagina_2 são EXEMPLOS (treino, não pontuam).
+As demais (pagina_3 em diante) são os itens pontuados.
+
+Conteúdo de cada pasta:
+  principal.png            -> imagem principal a ser completada
+  opcao1.png ... opcao7.png -> as 7 alternativas de resposta
+
+Gabarito: arquivo estimulos/tnvri/gabarito.json, ex.:
+  { "pagina_1": 3, "pagina_2": 5, "pagina_3": 2 }
+(número da opção correta de cada página)
