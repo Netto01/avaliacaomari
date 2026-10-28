@@ -30,6 +30,7 @@ export default function TnvriTestPage({ params }) {
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [itemSeconds, setItemSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const timerRef = useRef(null);
 
   // Modal de encerramento prematuro
@@ -297,8 +298,16 @@ export default function TnvriTestPage({ params }) {
       `}</style>
 
       {/* CABEÇALHO */}
-      <header style={{ background: '#ffffff', borderBottom: '1px solid #d6dccd' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', padding: '12px 32px' }}>
+      {isHeaderCollapsed ? (
+        <header style={{
+          background: '#ffffff',
+          borderBottom: '1px solid #d6dccd',
+          padding: '8px 32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px'
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
             <span style={{
               padding: '2px 8px',
@@ -312,192 +321,348 @@ export default function TnvriTestPage({ params }) {
             }}>
               TNVRI
             </span>
-            <h1 style={{
-              margin: 0,
+            <span style={{
               fontFamily: "'Fraunces', Georgia, serif",
-              fontSize: '22px',
-              lineHeight: '28px',
-              fontWeight: 560
+              fontSize: '18px',
+              fontWeight: 560,
+              color: '#28352c'
             }}>
               {currentPage.titulo || (isTreino ? `Exemplo ${currentPageIndex + 1}` : `Item ${currentPageIndex - 1}`)}
-            </h1>
-
+            </span>
             {isTreino ? (
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '4px',
                 padding: '2px 8px',
                 borderRadius: '4px',
                 background: '#dafeaa',
                 color: '#22512a',
                 fontSize: '12px',
-                lineHeight: '16px',
-                fontWeight: 600,
-                letterSpacing: '0.02em'
+                fontWeight: 600
               }}>
-                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9"></path>
-                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path>
-                </svg>
                 Treino · não pontua
               </span>
             ) : (
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '4px',
                 padding: '2px 8px',
                 borderRadius: '4px',
                 background: '#e9ede3',
                 color: '#28352c',
                 fontSize: '12px',
-                lineHeight: '16px',
-                fontWeight: 600,
-                letterSpacing: '0.02em'
+                fontWeight: 600
               }}>
                 Teste oficial
               </span>
             )}
-
-            <span aria-hidden="true" style={{ width: '1px', height: '24px', background: '#d6dccd' }}></span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#566152' }}>
-              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span>Paciente: <strong style={{ color: '#28352c', fontWeight: 600 }}>{patientName}</strong></span>
+            <span aria-hidden="true" style={{ width: '1px', height: '20px', background: '#d6dccd' }}></span>
+            <span style={{ fontSize: '13px', color: '#566152' }}>
+              Paciente: <strong style={{ color: '#28352c', fontWeight: 600 }}>{patientName}</strong>
+            </span>
+            <div style={{
+              flex: 1,
+              maxWidth: '220px',
+              height: '6px',
+              borderRadius: '999px',
+              background: '#e9ede3',
+              overflow: 'hidden',
+              marginLeft: '8px'
+            }}>
+              <div style={{
+                width: `${progressPercent}%`,
+                height: '100%',
+                borderRadius: '999px',
+                background: '#488b49',
+                transition: 'width 250ms ease-out'
+              }} />
+            </div>
+            <span style={{
+              fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+              fontSize: '12px',
+              color: '#566152'
+            }}>
+              {currentPageIndex + 1} / {totalPages}
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              role="timer"
-              aria-label={`Tempo decorrido ${formatTime(totalSeconds)}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '0 12px',
-                minHeight: '44px',
-                boxSizing: 'border-box',
-                borderRadius: '8px',
-                background: '#e9ede3',
-                fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-                fontSize: '15px',
-                fontWeight: 500,
-                color: isPaused ? '#a8261d' : '#28352c'
-              }}
-            >
-              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9"></circle>
-                <polyline points="12 7 12 12 15 14"></polyline>
-              </svg>
-              {isPaused ? 'Pausado' : formatTime(totalSeconds)}
-            </span>
-
             <button
               type="button"
-              onClick={() => setIsPaused((prev) => !prev)}
+              onClick={() => setIsHeaderCollapsed(false)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '0 14px',
-                minHeight: '44px',
+                gap: '6px',
+                padding: '0 12px',
+                minHeight: '36px',
                 borderRadius: '8px',
                 border: '1px solid #7d8775',
-                background: isPaused ? '#dafeaa' : '#ffffff',
+                background: '#ffffff',
                 color: '#28352c',
                 fontSize: '13px',
                 fontWeight: 600,
-                letterSpacing: '0.02em',
                 cursor: 'pointer'
               }}
             >
-              {isPaused ? (
-                <>
-                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                  Retomar
-                </>
-              ) : (
-                <>
-                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="6" y="5" width="4" height="14" rx="1"></rect>
-                    <rect x="14" y="5" width="4" height="14" rx="1"></rect>
-                  </svg>
-                  Pausar
-                </>
-              )}
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              Expandir barra (cronômetro)
             </button>
-
             <button
               type="button"
               onClick={() => setShowExitModal(true)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '0 14px',
-                minHeight: '44px',
-                boxSizing: 'border-box',
+                gap: '6px',
+                padding: '0 10px',
+                minHeight: '36px',
                 borderRadius: '8px',
                 border: 'none',
                 background: 'transparent',
                 color: '#a8261d',
                 fontSize: '13px',
                 fontWeight: 600,
-                letterSpacing: '0.02em',
-                cursor: 'pointer',
-                textDecoration: 'none'
+                cursor: 'pointer'
               }}
             >
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-              Encerrar aplicação
+              Encerrar
             </button>
           </div>
-        </div>
+        </header>
+      ) : (
+        <header style={{ background: '#ffffff', borderBottom: '1px solid #d6dccd' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', padding: '12px 32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+              <span style={{
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: '#efe7f0',
+                color: '#6a4870',
+                fontSize: '12px',
+                lineHeight: '16px',
+                fontWeight: 600,
+                letterSpacing: '0.02em'
+              }}>
+                TNVRI
+              </span>
+              <h1 style={{
+                margin: 0,
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontSize: '22px',
+                lineHeight: '28px',
+                fontWeight: 560
+              }}>
+                {currentPage.titulo || (isTreino ? `Exemplo ${currentPageIndex + 1}` : `Item ${currentPageIndex - 1}`)}
+              </h1>
 
-        {/* BARRA DE PROGRESSO */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 32px 12px' }}>
-          <div
-            role="progressbar"
-            aria-label="Progresso do teste"
-            aria-valuemin={1}
-            aria-valuemax={totalPages}
-            aria-valuenow={currentPageIndex + 1}
-            style={{
-              flex: 1,
-              height: '6px',
-              borderRadius: '999px',
-              background: '#e9ede3',
-              overflow: 'hidden'
-            }}
-          >
-            <div style={{
-              width: `${progressPercent}%`,
-              height: '100%',
-              borderRadius: '999px',
-              background: '#488b49',
-              transition: 'width 250ms ease-out'
-            }} />
+              {isTreino ? (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: '#dafeaa',
+                  color: '#22512a',
+                  fontSize: '12px',
+                  lineHeight: '16px',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em'
+                }}>
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path>
+                  </svg>
+                  Treino · não pontua
+                </span>
+              ) : (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: '#e9ede3',
+                  color: '#28352c',
+                  fontSize: '12px',
+                  lineHeight: '16px',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em'
+                }}>
+                  Teste oficial
+                </span>
+              )}
+
+              <span aria-hidden="true" style={{ width: '1px', height: '24px', background: '#d6dccd' }}></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#566152' }}>
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Paciente: <strong style={{ color: '#28352c', fontWeight: 600 }}>{patientName}</strong></span>
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span
+                role="timer"
+                aria-label={`Tempo decorrido ${formatTime(totalSeconds)}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '0 12px',
+                  minHeight: '44px',
+                  boxSizing: 'border-box',
+                  borderRadius: '8px',
+                  background: '#e9ede3',
+                  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  color: isPaused ? '#a8261d' : '#28352c'
+                }}
+              >
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <polyline points="12 7 12 12 15 14"></polyline>
+                </svg>
+                {isPaused ? 'Pausado' : formatTime(totalSeconds)}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setIsPaused((prev) => !prev)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '0 14px',
+                  minHeight: '44px',
+                  borderRadius: '8px',
+                  border: '1px solid #7d8775',
+                  background: isPaused ? '#dafeaa' : '#ffffff',
+                  color: '#28352c',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  cursor: 'pointer'
+                }}
+              >
+                {isPaused ? (
+                  <>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Retomar
+                  </>
+                ) : (
+                  <>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="6" y="5" width="4" height="14" rx="1"></rect>
+                      <rect x="14" y="5" width="4" height="14" rx="1"></rect>
+                    </svg>
+                    Pausar
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsHeaderCollapsed(true)}
+                title="Retrair barra superior (esconder cronômetro)"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0 12px',
+                  minHeight: '44px',
+                  borderRadius: '8px',
+                  border: '1px solid #7d8775',
+                  background: '#ffffff',
+                  color: '#28352c',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  cursor: 'pointer'
+                }}
+              >
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+                Retrair
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowExitModal(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '0 14px',
+                  minHeight: '44px',
+                  boxSizing: 'border-box',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#a8261d',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  cursor: 'pointer',
+                  textDecoration: 'none'
+                }}
+              >
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Encerrar aplicação
+              </button>
+            </div>
           </div>
-          <span style={{
-            fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-            fontSize: '12px',
-            lineHeight: '16px',
-            color: '#566152'
-          }}>
-            {currentPageIndex + 1} / {totalPages}
-          </span>
-        </div>
-      </header>
+
+          {/* BARRA DE PROGRESSO */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 32px 12px' }}>
+            <div
+              role="progressbar"
+              aria-label="Progresso do teste"
+              aria-valuemin={1}
+              aria-valuemax={totalPages}
+              aria-valuenow={currentPageIndex + 1}
+              style={{
+                flex: 1,
+                height: '6px',
+                borderRadius: '999px',
+                background: '#e9ede3',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                width: `${progressPercent}%`,
+                height: '100%',
+                borderRadius: '999px',
+                background: '#488b49',
+                transition: 'width 250ms ease-out'
+              }} />
+            </div>
+            <span style={{
+              fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+              fontSize: '12px',
+              lineHeight: '16px',
+              color: '#566152'
+            }}>
+              {currentPageIndex + 1} / {totalPages}
+            </span>
+          </div>
+        </header>
+      )}
 
       {/* ÁREA PRINCIPAL DIVIDIDA */}
       <main style={{
@@ -505,7 +670,8 @@ export default function TnvriTestPage({ params }) {
         minHeight: 0,
         display: 'flex',
         gap: '32px',
-        padding: '28px 32px'
+        padding: '24px 32px',
+        alignItems: 'stretch'
       }}>
         {/* ESTÍMULO (COLUNA ESQUERDA) */}
         <section
@@ -520,7 +686,7 @@ export default function TnvriTestPage({ params }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '32px'
+            padding: '28px'
           }}
         >
           {currentPage.principalUrl ? (
@@ -538,7 +704,7 @@ export default function TnvriTestPage({ params }) {
           )}
         </section>
 
-        {/* ALTERNATIVAS (COLUNA DIREITA) */}
+        {/* ALTERNATIVAS (COLUNA DIREITA CENTRALIZADA) */}
         <section
           aria-labelledby="pergunta"
           style={{
@@ -546,10 +712,12 @@ export default function TnvriTestPage({ params }) {
             minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px'
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '14px'
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'center', width: '100%', maxWidth: '580px' }}>
             <h2
               id="pergunta"
               style={{
@@ -584,7 +752,10 @@ export default function TnvriTestPage({ params }) {
             aria-labelledby="pergunta"
             style={{
               flex: 1,
+              width: '100%',
+              maxWidth: '580px',
               minHeight: 0,
+              maxHeight: '520px',
               display: 'grid',
               gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
@@ -615,15 +786,17 @@ export default function TnvriTestPage({ params }) {
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px',
-                    padding: '10px',
+                    gap: '4px',
+                    padding: '8px 10px',
                     minHeight: 0,
                     borderRadius: '14px',
                     textAlign: 'left',
                     transition: 'border-color 120ms, background-color 120ms',
                     border: '1px solid #7d8775',
                     background: '#ffffff',
-                    cursor: treinoFeedback || isPaused ? 'default' : 'pointer'
+                    cursor: treinoFeedback || isPaused ? 'default' : 'pointer',
+                    justifyContent: 'center',
+                    alignItems: 'center'
                   }}
                 >
                   <span
@@ -681,19 +854,20 @@ export default function TnvriTestPage({ params }) {
                   <span style={{
                     flex: 1,
                     minHeight: 0,
+                    width: '100%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: '#ffffff',
-                    borderRadius: '6px',
-                    padding: '8px'
+                    borderRadius: '8px',
+                    padding: '6px'
                   }}>
                     {opcao.url ? (
                       <img
                         src={opcao.url}
                         alt={`Alternativa ${opcao.letra}`}
                         style={{
-                          maxWidth: '82%',
+                          maxWidth: '90%',
                           maxHeight: '100%',
                           objectFit: 'contain'
                         }}
