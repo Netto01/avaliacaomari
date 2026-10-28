@@ -3,20 +3,6 @@
 import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { dbService } from '@/lib/supabaseClient';
-import {
-  CheckCircle2,
-  XCircle,
-  ArrowRight,
-  Clock,
-  User,
-  AlertTriangle,
-  Play,
-  RotateCcw,
-  Sparkles,
-  HelpCircle,
-  Home
-} from 'lucide-react';
-import Link from 'next/link';
 
 export default function TnvriTestPage({ params }) {
   const router = useRouter();
@@ -40,9 +26,10 @@ export default function TnvriTestPage({ params }) {
   // Respostas registradas dos itens de teste
   const [testResponses, setTestResponses] = useState([]);
 
-  // Cronômetros
+  // Cronômetros e pausa
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [itemSeconds, setItemSeconds] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
 
   // Modal de encerramento prematuro
@@ -56,7 +43,7 @@ export default function TnvriTestPage({ params }) {
         const { data: sessionData, error: sessionErr } = await dbService.getSession(sessionId);
         if (sessionErr || !sessionData) {
           alert('Sessão não encontrada.');
-          router.push('/dashboard');
+          router.push('/dashboard/pacientes');
           return;
         }
         setSession(sessionData);
@@ -80,21 +67,26 @@ export default function TnvriTestPage({ params }) {
     init();
   }, [sessionId, router]);
 
-  // 2. Cronômetro contínuo
+  // 2. Cronômetro contínuo (pausável)
   useEffect(() => {
-    if (loading || saving || pages.length === 0) return;
+    if (loading || saving || pages.length === 0 || isPaused) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
 
     timerRef.current = setInterval(() => {
-      setTotalSeconds(prev => prev + 1);
-      setItemSeconds(prev => prev + 1);
+      setTotalSeconds((prev) => prev + 1);
+      setItemSeconds((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [loading, saving, pages.length]);
+  }, [loading, saving, pages.length, isPaused]);
 
   const currentPage = pages[currentPageIndex];
   const isTreino = currentPage?.isTreino ?? false;
   const isLastPage = currentPageIndex === pages.length - 1;
+  const totalPages = pages.length || 62;
+  const progressPercent = Math.max(1.6, ((currentPageIndex + 1) / totalPages) * 100);
 
   // Formatação de tempo mm:ss
   const formatTime = (secs) => {
@@ -105,17 +97,26 @@ export default function TnvriTestPage({ params }) {
 
   // 3. Ação: Selecionar alternativa
   const handleSelectOption = (letra) => {
-    // Se estiver em feedback de treino, não muda
     if (treinoFeedback) return;
     setSelectedOption(letra);
   };
 
-  // 4. Ação: Confirmar resposta
+  // 4. Ação: Voltar para página anterior
+  const handlePrevious = () => {
+    if (currentPageIndex > 0 && !saving) {
+      setCurrentPageIndex((prev) => prev - 1);
+      setSelectedOption(null);
+      setTreinoFeedback(null);
+      setItemSeconds(0);
+    }
+  };
+
+  // 5. Ação: Confirmar resposta e avançar
   const handleConfirmAnswer = async () => {
-    if (!selectedOption) return;
+    if (!selectedOption || saving) return;
 
     if (isTreino) {
-      // Se ainda não mostrou feedback, mostra o feedback educativo
+      // Se ainda não mostrou feedback, valida e exibe o feedback
       if (!treinoFeedback) {
         const isCorrect = selectedOption.toUpperCase() === currentPage.correta.toUpperCase();
         setTreinoFeedback({
@@ -125,11 +126,11 @@ export default function TnvriTestPage({ params }) {
         return;
       }
 
-      // Se já mostrou feedback, avança para o próximo
+      // Se já mostrou feedback, avança para o próximo exemplo ou item
       setTreinoFeedback(null);
       setSelectedOption(null);
       setItemSeconds(0);
-      setCurrentPageIndex(prev => prev + 1);
+      setCurrentPageIndex((prev) => prev + 1);
       return;
     }
 
@@ -153,16 +154,16 @@ export default function TnvriTestPage({ params }) {
     } else {
       setSelectedOption(null);
       setItemSeconds(0);
-      setCurrentPageIndex(prev => prev + 1);
+      setCurrentPageIndex((prev) => prev + 1);
     }
   };
 
-  // 5. Finalizar teste e salvar resultados
+  // 6. Finalizar teste e salvar resultados
   const finishTest = async (finalResponses) => {
     setSaving(true);
     if (timerRef.current) clearInterval(timerRef.current);
 
-    const totalHits = finalResponses.filter(r => r.isCorrect).length;
+    const totalHits = finalResponses.filter((r) => r.isCorrect).length;
     const totalErrors = finalResponses.length - totalHits;
 
     const payload = {
@@ -186,6 +187,27 @@ export default function TnvriTestPage({ params }) {
     }
   };
 
+  // 7. Atalhos de teclado (A-F para marcar, Enter para confirmar)
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+      const k = e.key.toUpperCase();
+      if (['A', 'B', 'C', 'D', 'E', 'F'].includes(k) && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleSelectOption(k);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (selectedOption) {
+          handleConfirmAnswer();
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedOption, treinoFeedback, currentPageIndex, isTreino, pages, testResponses, itemSeconds, totalSeconds, isLastPage]);
+
   if (loading || !currentPage) {
     return (
       <div style={{
@@ -194,13 +216,22 @@ export default function TnvriTestPage({ params }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f8fafc',
+        background: '#f4f6f0',
+        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
         gap: '16px'
       }}>
-        <div className="brand-icon" style={{ width: '56px', height: '56px', fontSize: '1.4rem', animation: 'spin 2s linear infinite' }}>
-          AVN
-        </div>
-        <h2 style={{ fontSize: '1.2rem', color: '#334155' }}>Carregando Estímulos do TNVRI...</h2>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          border: '4px solid #d6dccd',
+          borderTopColor: '#2f6b31',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <h2 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: '20px', color: '#28352c', fontWeight: 560 }}>
+          Carregando caderno do TNVRI...
+        </h2>
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -213,361 +244,698 @@ export default function TnvriTestPage({ params }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f8fafc',
+        background: '#f4f6f0',
+        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
         gap: '16px'
       }}>
         <div style={{
-          width: '56px',
-          height: '56px',
+          width: '48px',
+          height: '48px',
           borderRadius: '50%',
-          border: '4px solid #cbd5e1',
-          borderTopColor: 'var(--primary)',
+          border: '4px solid #d6dccd',
+          borderTopColor: '#2f6b31',
           animation: 'spin 1s linear infinite'
         }} />
-        <h2 style={{ fontSize: '1.25rem', color: '#1e293b' }}>Calculando e salvando resultados...</h2>
+        <h2 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: '22px', color: '#28352c', fontWeight: 560 }}>
+          Processando e gerando relatório do TNVRI...
+        </h2>
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  const patientName = patient?.full_name || 'Mariana';
+
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#f1f5f9',
+      height: '100vh',
+      boxSizing: 'border-box',
       display: 'flex',
       flexDirection: 'column',
-      userSelect: 'none'
+      background: '#f4f6f0',
+      color: '#28352c',
+      fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+      fontSize: '16px',
+      lineHeight: '24px',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      {/* Barra Superior do Avaliador (Clean e minimalista) */}
-      <header style={{
-        background: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            background: isTreino ? '#f59e0b' : '#3b82f6',
-            color: '#ffffff',
-            padding: '4px 12px',
-            borderRadius: '20px',
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            {isTreino ? <Sparkles size={14} /> : null}
-            {isTreino ? 'EXEMPLO DE TREINO' : 'TESTE OFICIAL'}
+      <style>{`
+        #confirmar:disabled{opacity:.45;cursor:default}
+        .opcao[aria-checked=true]{border:2px solid #2f6b31!important;background:#dafeaa!important;padding:9px!important}
+        .opcao[aria-checked=true] .badge{background:#2f6b31!important;color:#fff!important}
+        .opcao[aria-checked=true] .check{display:flex!important}
+        .opcao:hover{border-color:#2f6b31!important}
+        .opcao.correta-treino{border:2px solid #2f6b31!important;background:#dafeaa!important;padding:9px!important}
+        .opcao.correta-treino .badge{background:#2f6b31!important;color:#fff!important}
+        .opcao.correta-treino .check{display:flex!important}
+        .opcao.errada-treino{border:2px solid #a8261d!important;background:#fde8e8!important;padding:9px!important}
+        .opcao.errada-treino .badge{background:#a8261d!important;color:#fff!important}
+        @media (max-width:900px){main{flex-direction:column!important;overflow:auto}}
+        a:focus-visible,button:focus-visible{outline:2px solid #9a5d12;outline-offset:2px}
+      `}</style>
+
+      {/* CABEÇALHO */}
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #d6dccd' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', padding: '12px 32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            <span style={{
+              padding: '2px 8px',
+              borderRadius: '4px',
+              background: '#efe7f0',
+              color: '#6a4870',
+              fontSize: '12px',
+              lineHeight: '16px',
+              fontWeight: 600,
+              letterSpacing: '0.02em'
+            }}>
+              TNVRI
+            </span>
+            <h1 style={{
+              margin: 0,
+              fontFamily: "'Fraunces', Georgia, serif",
+              fontSize: '22px',
+              lineHeight: '28px',
+              fontWeight: 560
+            }}>
+              {currentPage.titulo || (isTreino ? `Exemplo ${currentPageIndex + 1}` : `Item ${currentPageIndex - 1}`)}
+            </h1>
+
+            {isTreino ? (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: '#dafeaa',
+                color: '#22512a',
+                fontSize: '12px',
+                lineHeight: '16px',
+                fontWeight: 600,
+                letterSpacing: '0.02em'
+              }}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path>
+                </svg>
+                Treino · não pontua
+              </span>
+            ) : (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: '#e9ede3',
+                color: '#28352c',
+                fontSize: '12px',
+                lineHeight: '16px',
+                fontWeight: 600,
+                letterSpacing: '0.02em'
+              }}>
+                Teste oficial
+              </span>
+            )}
+
+            <span aria-hidden="true" style={{ width: '1px', height: '24px', background: '#d6dccd' }}></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#566152' }}>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>Paciente: <strong style={{ color: '#28352c', fontWeight: 600 }}>{patientName}</strong></span>
+            </span>
           </div>
 
-          <div style={{ fontSize: '0.92rem', color: '#1e293b', fontWeight: 600 }}>
-            {currentPage.titulo}
-          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              role="timer"
+              aria-label={`Tempo decorrido ${formatTime(totalSeconds)}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '0 12px',
+                minHeight: '44px',
+                boxSizing: 'border-box',
+                borderRadius: '8px',
+                background: '#e9ede3',
+                fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+                fontSize: '15px',
+                fontWeight: 500,
+                color: isPaused ? '#a8261d' : '#28352c'
+              }}
+            >
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <polyline points="12 7 12 12 15 14"></polyline>
+              </svg>
+              {isPaused ? 'Pausado' : formatTime(totalSeconds)}
+            </span>
 
-          <div style={{ fontSize: '0.85rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <User size={15} />
-            <span>{patient?.full_name || 'Paciente'}</span>
+            <button
+              type="button"
+              onClick={() => setIsPaused((prev) => !prev)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '0 14px',
+                minHeight: '44px',
+                borderRadius: '8px',
+                border: '1px solid #7d8775',
+                background: isPaused ? '#dafeaa' : '#ffffff',
+                color: '#28352c',
+                fontSize: '13px',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                cursor: 'pointer'
+              }}
+            >
+              {isPaused ? (
+                <>
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  Retomar
+                </>
+              ) : (
+                <>
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="6" y="5" width="4" height="14" rx="1"></rect>
+                    <rect x="14" y="5" width="4" height="14" rx="1"></rect>
+                  </svg>
+                  Pausar
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowExitModal(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '0 14px',
+                minHeight: '44px',
+                boxSizing: 'border-box',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'transparent',
+                color: '#a8261d',
+                fontSize: '13px',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                cursor: 'pointer',
+                textDecoration: 'none'
+              }}
+            >
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              Encerrar aplicação
+            </button>
           </div>
         </div>
 
-        {/* Indicador de Encerramento */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={() => setShowExitModal(true)}
+        {/* BARRA DE PROGRESSO */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 32px 12px' }}>
+          <div
+            role="progressbar"
+            aria-label="Progresso do teste"
+            aria-valuemin={1}
+            aria-valuemax={totalPages}
+            aria-valuenow={currentPageIndex + 1}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              fontSize: '0.82rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
+              flex: 1,
+              height: '6px',
+              borderRadius: '999px',
+              background: '#e9ede3',
+              overflow: 'hidden'
             }}
-            title="Encerrar teste"
           >
-            <Home size={16} /> Sair
-          </button>
+            <div style={{
+              width: `${progressPercent}%`,
+              height: '100%',
+              borderRadius: '999px',
+              background: '#488b49',
+              transition: 'width 250ms ease-out'
+            }} />
+          </div>
+          <span style={{
+            fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+            fontSize: '12px',
+            lineHeight: '16px',
+            color: '#566152'
+          }}>
+            {currentPageIndex + 1} / {totalPages}
+          </span>
         </div>
       </header>
 
-      {/* Área Central de Aplicação */}
+      {/* ÁREA PRINCIPAL DIVIDIDA */}
       <main style={{
         flex: 1,
-        maxWidth: '1100px',
-        width: '100%',
-        margin: '0 auto',
-        padding: '20px 24px 32px 24px',
+        minHeight: 0,
         display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        gap: '20px'
+        gap: '32px',
+        padding: '28px 32px'
       }}>
-        {/* Banner de Feedback nos Exemplos de Treino */}
-        {isTreino && treinoFeedback && (
-          <div style={{
-            padding: '14px 20px',
-            borderRadius: '10px',
-            background: treinoFeedback.isCorrect ? '#f0fdf4' : '#fffbeb',
-            border: `1.5px solid ${treinoFeedback.isCorrect ? '#86efac' : '#fcd34d'}`,
+        {/* ESTÍMULO (COLUNA ESQUERDA) */}
+        <section
+          aria-label="Estímulo"
+          style={{
+            flex: 1.15,
+            minWidth: 0,
+            background: '#ffffff',
+            border: '1px solid #d6dccd',
+            borderRadius: '14px',
+            boxShadow: '0 1px 2px rgba(27, 38, 28, 0.06), 0 2px 8px rgba(27, 38, 28, 0.05)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            animation: 'fadeIn 0.3s ease'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {treinoFeedback.isCorrect ? (
-                <CheckCircle2 size={24} color="#16a34a" />
-              ) : (
-                <AlertTriangle size={24} color="#d97706" />
-              )}
-              <div>
-                <strong style={{ color: treinoFeedback.isCorrect ? '#15803d' : '#b45309', display: 'block' }}>
-                  {treinoFeedback.isCorrect ? 'Muito bem! Resposta correta!' : 'Atenção ao exemplo!'}
-                </strong>
-                <span style={{ fontSize: '0.88rem', color: '#475569' }}>
-                  {treinoFeedback.isCorrect
-                    ? 'A peça selecionada completa perfeitamente a lacuna do desenho.'
-                    : `A alternativa correta é a letra ${treinoFeedback.correta}. Explique para a criança o porquê desta escolha antes de prosseguir.`}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleConfirmAnswer}
-              className="btn btn-primary"
-              style={{
-                background: treinoFeedback.isCorrect ? '#16a34a' : '#d97706',
-                border: 'none',
-                padding: '10px 20px',
-                fontWeight: 700
-              }}
-            >
-              Continuar <ArrowRight size={18} />
-            </button>
-          </div>
-        )}
-
-        {/* 1. Imagem Principal (Matriz com a lacuna) */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '16px',
-          padding: '20px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
-          border: '1px solid #e2e8f0',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '280px'
-        }}>
+            justifyContent: 'center',
+            padding: '32px'
+          }}
+        >
           {currentPage.principalUrl ? (
             <img
               src={currentPage.principalUrl}
-              alt="Matriz Principal"
+              alt={`Estímulo do ${currentPage.titulo}: desenho com uma parte faltando, marcada por um retângulo vazio`}
               style={{
-                maxHeight: '320px',
                 maxWidth: '100%',
-                objectFit: 'contain',
-                borderRadius: '8px'
+                maxHeight: '100%',
+                objectFit: 'contain'
               }}
             />
           ) : (
-            <p style={{ color: '#94a3b8' }}>Imagem principal não disponível</p>
+            <p style={{ color: '#566152' }}>Imagem do estímulo não disponível.</p>
           )}
-        </div>
+        </section>
 
-        {/* 2. As 6 Opções de Resposta (Grade 2x3: 3 por linha) */}
-        <div>
-          <div style={{
-            fontSize: '0.9rem',
-            color: '#64748b',
-            marginBottom: '12px',
-            textAlign: 'center',
-            fontWeight: 500
-          }}>
-            Escolha a alternativa que melhor completa o desenho acima:
+        {/* ALTERNATIVAS (COLUNA DIREITA) */}
+        <section
+          aria-labelledby="pergunta"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <h2
+              id="pergunta"
+              style={{
+                margin: 0,
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontSize: '26px',
+                lineHeight: '32px',
+                fontWeight: 560
+              }}
+            >
+              Qual peça completa o desenho?
+            </h2>
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '20px', color: '#566152' }}>
+              {treinoFeedback ? (
+                treinoFeedback.isCorrect ? (
+                  <span style={{ color: '#22512a', fontWeight: 600 }}>
+                    Muito bem! A alternativa {treinoFeedback.correta} completa o desenho perfeitamente.
+                  </span>
+                ) : (
+                  <span style={{ color: '#a8261d', fontWeight: 600 }}>
+                    A alternativa correta é a letra {treinoFeedback.correta}. Mostre ao paciente antes de avançar.
+                  </span>
+                )
+              ) : (
+                'Toque em uma alternativa. Dá para trocar antes de confirmar.'
+              )}
+            </p>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '16px'
-          }}>
-            {currentPage.opcoes.map((opcao) => {
+          <div
+            role="radiogroup"
+            aria-labelledby="pergunta"
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
+              gap: '12px'
+            }}
+          >
+            {currentPage.opcoes && currentPage.opcoes.map((opcao) => {
               const isSelected = selectedOption === opcao.letra;
               const isCorretaNoFeedback = treinoFeedback && opcao.letra === treinoFeedback.correta;
               const isErradaNoFeedback = treinoFeedback && !treinoFeedback.isCorrect && isSelected;
 
-              // Estilos de borda e fundo conforme seleção e feedback
-              let borderColor = '#cbd5e1';
-              let bgColor = '#ffffff';
-              let shadow = '0 2px 4px rgba(0,0,0,0.02)';
-
-              if (isSelected) {
-                borderColor = 'var(--primary)';
-                bgColor = '#eff6ff';
-                shadow = '0 0 0 3px rgba(37, 99, 235, 0.25)';
-              }
-
-              if (isCorretaNoFeedback) {
-                borderColor = '#16a34a';
-                bgColor = '#f0fdf4';
-                shadow = '0 0 0 3px rgba(22, 163, 74, 0.35)';
-              } else if (isErradaNoFeedback) {
-                borderColor = '#dc2626';
-                bgColor = '#fef2f2';
-                shadow = '0 0 0 3px rgba(220, 38, 38, 0.35)';
-              }
+              let extraClass = '';
+              if (isCorretaNoFeedback) extraClass = 'correta-treino';
+              else if (isErradaNoFeedback) extraClass = 'errada-treino';
 
               return (
                 <button
                   key={opcao.letra}
                   type="button"
+                  className={`opcao ${extraClass}`}
+                  role="radio"
+                  aria-checked={isSelected ? 'true' : 'false'}
+                  aria-label={`Alternativa ${opcao.letra}`}
+                  data-letra={opcao.letra}
                   onClick={() => handleSelectOption(opcao.letra)}
-                  disabled={Boolean(treinoFeedback)}
+                  disabled={Boolean(treinoFeedback) || isPaused}
                   style={{
-                    background: bgColor,
-                    border: `2px solid ${borderColor}`,
-                    borderRadius: '14px',
-                    padding: '14px',
+                    position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: treinoFeedback ? 'default' : 'pointer',
-                    position: 'relative',
-                    transition: 'all 0.15s ease-in-out',
-                    boxShadow: shadow,
-                    minHeight: '140px',
-                    outline: 'none'
+                    gap: '6px',
+                    padding: '10px',
+                    minHeight: 0,
+                    borderRadius: '14px',
+                    textAlign: 'left',
+                    transition: 'border-color 120ms, background-color 120ms',
+                    border: '1px solid #7d8775',
+                    background: '#ffffff',
+                    cursor: treinoFeedback || isPaused ? 'default' : 'pointer'
                   }}
                 >
-                  {/* Letra identificadora (Badge superior esquerdo) */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '10px',
-                    left: '12px',
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    background: isSelected ? 'var(--primary)' : (isCorretaNoFeedback ? '#16a34a' : '#f1f5f9'),
-                    color: (isSelected || isCorretaNoFeedback) ? '#ffffff' : '#475569',
+                  <span
+                    className="badge"
+                    aria-hidden="true"
+                    style={{
+                      alignSelf: 'flex-start',
+                      minWidth: '28px',
+                      height: '28px',
+                      padding: '0 6px',
+                      boxSizing: 'border-box',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      background: '#e9ede3',
+                      color: '#28352c',
+                      transition: 'background 120ms, color 120ms'
+                    }}
+                  >
+                    {opcao.letra}
+                  </span>
+
+                  <span
+                    className="check"
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      background: isErradaNoFeedback ? '#a8261d' : '#2f6b31',
+                      color: '#ffffff',
+                      display: isSelected || isCorretaNoFeedback ? 'flex' : 'none',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {isErradaNoFeedback ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    )}
+                  </span>
+
+                  <span style={{
+                    flex: 1,
+                    minHeight: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    transition: 'all 0.15s ease'
+                    background: '#ffffff',
+                    borderRadius: '6px',
+                    padding: '8px'
                   }}>
-                    {opcao.letra}
-                  </div>
-
-                  {/* Imagem da alternativa */}
-                  {opcao.url ? (
-                    <img
-                      src={opcao.url}
-                      alt={`Opção ${opcao.letra}`}
-                      style={{
-                        maxHeight: '110px',
-                        maxWidth: '85%',
-                        objectFit: 'contain',
-                        marginTop: '10px'
-                      }}
-                    />
-                  ) : (
-                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Opção {opcao.letra}</span>
-                  )}
+                    {opcao.url ? (
+                      <img
+                        src={opcao.url}
+                        alt={`Alternativa ${opcao.letra}`}
+                        style={{
+                          maxWidth: '82%',
+                          maxHeight: '100%',
+                          objectFit: 'contain'
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '13px', color: '#566152' }}>Peça {opcao.letra}</span>
+                    )}
+                  </span>
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {/* 3. Rodapé com Botão de Confirmação */}
-        {!treinoFeedback && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: '8px'
-          }}>
-            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-              {isTreino ? (
-                <span>Os exemplos não contam pontos. Responda para avançar.</span>
-              ) : (
-                <span>Selecione a alternativa e clique em avançar.</span>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleConfirmAnswer}
-              disabled={!selectedOption}
-              className="btn btn-primary btn-lg"
-              style={{
-                opacity: selectedOption ? 1 : 0.5,
-                cursor: selectedOption ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '14px 32px',
-                fontSize: '1.05rem',
-                fontWeight: 700,
-                borderRadius: '12px'
-              }}
-            >
-              {isLastPage ? 'Concluir Teste' : 'Confirmar e Avançar'} <ArrowRight size={20} />
-            </button>
-          </div>
-        )}
+        </section>
       </main>
 
-      {/* Modal de Confirmação para Sair */}
+      {/* RODAPÉ */}
+      <footer style={{ background: '#ffffff', borderTop: '1px solid #d6dccd' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 32px' }}>
+          <span style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flex: 1,
+            fontSize: '13px',
+            lineHeight: '18px',
+            color: '#566152'
+          }}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <line x1="12" y1="11" x2="12" y2="16"></line>
+              <line x1="12" y1="8" x2="12" y2="8"></line>
+            </svg>
+            {isTreino
+              ? 'Os exemplos de treino não contam pontos. Se o paciente errar, mostre a resposta certa antes de seguir.'
+              : 'Itens oficiais da avaliação TNVRI. Selecione a alternativa e confirme para registrar.'}
+          </span>
+
+          <span id="sel-label" style={{ fontSize: '13px', color: '#566152' }}>
+            {selectedOption ? `Resposta marcada: ${selectedOption}` : 'Nenhuma alternativa marcada'}
+          </span>
+
+          <button
+            type="button"
+            onClick={handlePrevious}
+            disabled={currentPageIndex === 0 || Boolean(treinoFeedback) || saving}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '0 16px',
+              minHeight: '48px',
+              borderRadius: '8px',
+              border: '1px solid #d6dccd',
+              background: '#ffffff',
+              color: '#566152',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: currentPageIndex === 0 ? 'default' : 'pointer',
+              opacity: currentPageIndex === 0 ? 0.45 : 1
+            }}
+          >
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Anterior
+          </button>
+
+          <button
+            type="button"
+            id="confirmar"
+            onClick={handleConfirmAnswer}
+            disabled={!selectedOption || saving || isPaused}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '0 20px',
+              minHeight: '48px',
+              borderRadius: '8px',
+              border: 0,
+              background: '#2f6b31',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: 600,
+              letterSpacing: '0.02em',
+              cursor: !selectedOption || saving ? 'default' : 'pointer'
+            }}
+          >
+            {treinoFeedback ? 'Avançar para o próximo' : (isLastPage ? 'Concluir teste' : 'Confirmar e avançar')}
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </footer>
+
+      {/* OVERLAY DE PAUSA */}
+      {isPaused && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(244, 246, 240, 0.92)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 80,
+          gap: '16px'
+        }}>
+          <div style={{
+            padding: '8px 16px',
+            borderRadius: '999px',
+            background: '#dafeaa',
+            color: '#22512a',
+            fontSize: '13px',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="6" y="5" width="4" height="14" rx="1"></rect>
+              <rect x="14" y="5" width="4" height="14" rx="1"></rect>
+            </svg>
+            Aplicação pausada
+          </div>
+          <h2 style={{
+            margin: 0,
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontSize: '28px',
+            color: '#28352c',
+            fontWeight: 560
+          }}>
+            O cronômetro está congelado
+          </h2>
+          <p style={{ margin: 0, fontSize: '15px', color: '#566152' }}>
+            Clique abaixo para retomar a aplicação com o paciente.
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsPaused(false)}
+            style={{
+              marginTop: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '0 24px',
+              minHeight: '48px',
+              borderRadius: '8px',
+              border: 0,
+              background: '#2f6b31',
+              color: '#ffffff',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Retomar aplicação
+          </button>
+        </div>
+      )}
+
+      {/* MODAL DE ENCERRAMENTO PREMATURO */}
       {showExitModal && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.5)',
+          background: 'rgba(40, 53, 44, 0.45)',
+          backdropFilter: 'blur(2px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 9999,
+          zIndex: 100,
           padding: '20px'
         }}>
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
-            maxWidth: '440px',
+            maxWidth: '460px',
             width: '100%',
             padding: '28px',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+            border: '1px solid #d6dccd',
+            boxShadow: '0 20px 25px -5px rgba(27, 38, 28, 0.15)'
           }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '10px', color: '#1e293b' }}>
-              Deseja interromper a aplicação?
+            <h3 style={{
+              margin: '0 0 10px',
+              fontFamily: "'Fraunces', Georgia, serif",
+              fontSize: '22px',
+              lineHeight: '28px',
+              color: '#28352c',
+              fontWeight: 560
+            }}>
+              Encerrar aplicação do TNVRI?
             </h3>
-            <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, marginBottom: '24px' }}>
-              Se sair agora, as respostas desta sessão não serão salvas como concluídas.
+            <p style={{
+              margin: '0 0 24px',
+              fontSize: '14px',
+              lineHeight: '20px',
+              color: '#566152'
+            }}>
+              Se você encerrar agora, os dados parciais desta sessão não serão contabilizados no relatório final. Tem certeza?
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button
+                type="button"
                 onClick={() => setShowExitModal(false)}
-                className="btn btn-secondary"
+                style={{
+                  padding: '0 16px',
+                  minHeight: '44px',
+                  borderRadius: '8px',
+                  border: '1px solid #7d8775',
+                  background: '#ffffff',
+                  color: '#28352c',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
               >
-                Continuar Teste
+                Continuar teste
               </button>
               <button
-                onClick={() => router.push('/dashboard')}
-                className="btn btn-primary"
-                style={{ background: '#dc2626', borderColor: '#dc2626' }}
+                type="button"
+                onClick={() => router.push('/dashboard/pacientes')}
+                style={{
+                  padding: '0 18px',
+                  minHeight: '44px',
+                  borderRadius: '8px',
+                  border: 0,
+                  background: '#a8261d',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
               >
-                Sair do Teste
+                Sim, encerrar
               </button>
             </div>
           </div>
